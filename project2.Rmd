@@ -1,0 +1,219 @@
+---
+title: "Group Project 2"
+author: "Student Number"
+output:
+  pdf_document:
+    latex_engine: pdflatex
+    number_sections: yes
+    keep_tex: true
+  html_document:
+    df_print: paged
+fig_caption: yes
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE, eval = TRUE, warning = FALSE, message = FALSE, comment = NA)
+```
+
+```{r libraries}
+library(tidyverse)
+library(moderndive)
+library(gapminder)
+library(sjPlot)
+library(stats)
+library(jtools)
+library(knitr)
+library(ggplot2)
+library(dplyr)
+library(caret)
+library(GGally)
+library(gridExtra)
+```
+
+# Introduction {#sec:Intro}
+
+**GOAL: Which properties of films influence whether they are rated by IMDB as greater than 7 or not?**
+
+# Data processing {#sec:DataProcess}
+
+As there are some NA values in this dataset which will influence our result, we first omit those NA value. Then, we use the column rating to create a binary factor. And we omit the invalid column film_id and rating. 
+
+According to dataset, we need to transform the characters type value into factor. Finally, we set the level of response variable to make the graph of the data visualization more understandable.
+
+```{r data, echo=TRUE, eval=TRUE, warning=FALSE, message=FALSE}
+##Read and merge the dataset
+#Omit the NA values
+film = read.csv("dataset10.csv")%>%
+  na.omit()
+#Create the binary factor
+film$greater_than_7 <- ifelse(film$rating > 7, "yes", "no")
+#Select dataset to omit the invalid column(eg.film_id and rating)
+film.select = film %>%
+  dplyr::select(year, length, budget, votes, genre, greater_than_7)
+#Rename the dataset and transform the chr type value into factor
+DataSet = film.select%>%
+  mutate_if(is.character, as.factor)
+#Set the level of response variable
+levels(DataSet$greater_than_7) <- c("IMDB rate less than 7", "IMDB rate greater than 7")
+```
+
+
+# Exploratory Data Analysis {#sec:EDA}
+
+The Scatterplot matrix **figure \ref{fig:ggpair}** shows that most correlation between explanatory variables are small,therefore the initial model was built without censoring the variables.
+
+```{r visual1, echo=TRUE, eval=TRUE, warning=FALSE, message=FALSE, out.width='90%',fig.align='center',fig.cap="\\label{fig:ggpair} Correlation between explanatory variables.",fig.pos='!htbp'}
+##Plot to get an initial impression of the data
+# Check correlations, distribution and print correlation coefficient 
+ggpairs(data= film.select, title="Correlation between explanatory variables",
+        ggplot2::aes(color=greater_than_7))
+```
+
+
+```{r visual2, echo=TRUE, eval=TRUE, warning=FALSE, message=FALSE, out.width='90%',fig.align='center',fig.cap="\\label{fig:box}The Boxplot of IMDB rating greater than 7 versus each variable",fig.pos='!htbp'}
+#Plot of year against greater_than_7
+p1 = ggplot(data = DataSet, aes(x = greater_than_7, y = year, fill = greater_than_7)) +
+  geom_boxplot() +
+  labs(x = "IMDB rate greater than 7 or not", y = "Year", 
+       title = "Year and IMDB rate greater than 7 or not") +
+  theme(legend.position = "none",plot.title = element_text(size = 10),axis.text = element_text(size = 7))
+#Notice that the factor year seems not to influence rates
+
+#Plot of length against greater_than_7
+p2 = ggplot(data = DataSet, aes(x = greater_than_7, y = length, fill = greater_than_7)) +
+  geom_boxplot() +
+  labs(x = "IMDB rate greater than 7 or not", y = "Length",
+       title = "Length and IMDB rate greater than 7 or not") +
+  theme(legend.position = "none",plot.title = element_text(size = 10),axis.text = element_text(size = 7))
+
+#boxplot of budget against greater_than_7
+p3 = ggplot(data = DataSet, aes(x = greater_than_7, y = budget, fill = greater_than_7)) +
+  geom_boxplot() +
+  labs(x = "IMDB rate greater than 7 or not", y = "Budget",
+       title = "Budget and IMDB rate greater than 7 or not") +
+  theme(legend.position = "none",plot.title = element_text(size = 10),axis.text = element_text(size = 7))
+
+#boxplot of votes against greater_than_7
+p4 = ggplot(data = DataSet, aes(x = greater_than_7, y = votes, fill = greater_than_7)) +
+  geom_boxplot() +
+  labs(x = "IMDB rate greater than 7 or not", y = "Votes",
+       title = "Votes and IMDB rate greater than 7 or not") +
+  theme(legend.position = "none",plot.title = element_text(size = 10),axis.text = element_text(size = 7))
+
+grid.arrange(p1,p2,p3,p4, top = "The Boxplot of IMDB rating greater than 7 versus each variable",ncol = 2,nrow=2)
+```
+**Figure \ref{fig:box}** demonstrates the relationships between the four numerical variables and the response variable Y(IMDB rate greater than 7) through multiple boxplots. These plots can be used to identify associations, trends, outliers, and non-linear relationships between the variables, thus providing valuable insights for further analysis and model development.
+
+-There are zero potential outlier in the plot.
+
+-There are many potential outliers in the plot.
+
+-There are eight potential outliers in the plot.
+
+-There are all potential outliers in the plot.
+
+\
+The histogram(**figure \ref{fig:his}**) shows how many IMDB rates are less than 7 and more than 7 in different movie genre, respectively.
+
+```{r visual3, echo=TRUE, eval=TRUE, warning=FALSE, message=FALSE, out.width='90%',fig.align='center',fig.cap="\\label{fig:his}The Histograms of the proportion of movie categories and IMDB rate greater than 7 or not.",fig.pos='!htbp'}
+#Plot of genre against greater_than_7
+ggplot(data = DataSet, aes(x= greater_than_7,  y = ..prop.., group=genre, fill=genre)) + 
+  geom_bar(position="dodge", stat="count") +
+  labs(x = "IMDB rate greater than 7 or not", y = "Proportion",
+       title = "The Histograms of the proportion of movie categories and IMDB rate greater than 7 or not")
+```
+\newpage
+
+# Modeling {#sec:Model}
+## Initial modelling {#sec:init}
+
+Initial modelling was carried out using the GLM function and the model results were as follows.
+```{r modeling, eval=TRUE,warning=FALSE,echo=TRUE}
+model = glm(greater_than_7 ~ year + length + budget + votes + genre, data = DataSet, 
+             family = binomial(link = "logit"))
+model %>%
+  summary()
+```
+```{r coef, echo=FALSE}
+coefs <- round(coef(model), 2)
+```
+
+\begin{align*}
+\ln\left(\frac{p}{1-p}\right) &= `r coefs[1]` + 0.004 \cdot \textrm{year}  `r coefs[3]` \cdot \textrm{length} + `r coefs[4]` \cdot \textrm{budget} + 0.00005 \cdot \textrm{votes} `r coefs[6]` \cdot \mathbf {I}_{(Animation)} + \\
+`r coefs[7]` \cdot \mathbf {I}_{(Comedy)} + 
+&`r coefs[8]` \cdot \mathbf {I}_{(Documentary)} `r coefs[9]` \cdot \mathbf {I}_{Drama}  
+`r coefs[10]` \cdot \mathbf {I}_{(Romance)} + `r coefs[11]` \cdot \mathbf {I}_{(Short)} \nonumber
+\end{align*}
+
+where $\mathbf {p}$ is the probability of scores greater than 7, and $\mathbf {1-p}$ is the probability of scores less than 7.
+
+From the results it is clear that.
+
+1. the slope of the Year variable is estimated to be positive, which means that, all else being equal, films released later are more likely to receive a higher rating. In the parametric test, it has a high p-value, so it has a high probability of being a non-significant variable.
+
+2. the point estimate of odds for length is negative, suggesting that, all else being equal, the longer the film the more likely it is to receive a poor rating.
+
+3. a positive odds estimate for budge means that, all else being equal, the higher the budget, the more likely it is that the film will have a high rating.
+
+4. a positive odds point estimate for the votes variable suggests that, all else being equal, the higher the number of votes, the more likely the film is to receive a high rating.
+
+5. Different film categories all have different effects on film ratings; for example, when all else is equal, films in the Animation/ Drama/ Romance category are less likely to be well-received; films in the Comdy/ Documentary/ Short category are more likely to be well-recognised.
+
+
+## Model optimisation {#sec:Optim}
+
+Based on the initial modelling results, the YEAR variable looks more likely to be a non-significant variable, so this variable will be removed and the model will be reconstructed using the remaining variables, resulting in the following.
+
+```{r ModlOptim, eval=TRUE,warning=FALSE}
+model = glm(greater_than_7 ~ length + budget + votes + genre, data = DataSet, 
+            family = binomial(link = "logit"))
+#Summarize the second model
+model %>%
+  summary()
+```
+```{r optCoef, echo=FALSE}
+coefs <- round(coef(model), 2)
+```
+
+\begin{align*}
+\ln\left(\frac{p}{1-p}\right) &= `r coefs[1]` + `r coefs[2]` \cdot \textrm{length} + `r coefs[3]` \cdot \textrm{budget} + 0.00005 \cdot \textrm{votes} `r coefs[5]` \cdot \mathbf {I}_{(Animation)} + `r coefs[6]` \cdot \mathbf {I}_{(Comedy)} + \\
+&`r coefs[7]` \cdot \mathbf {I}_{(Documentary)} `r coefs[8]` \cdot \mathbf {I}_{Drama}  
+`r coefs[9]` \cdot \mathbf {I}_{(Romance)} + `r coefs[10]` \cdot \mathbf {I}_{(Short)} \nonumber
+\end{align*}
+
+
+# Conclusions {#sec:Conc}
+
+```{r pred, echo=FALSE,warning=FALSE}
+DataSet = DataSet %>%
+  mutate(probs.greater_than_7 = round(fitted(model),4))%>%
+  mutate(pred = ifelse(probs.greater_than_7>=0.5,"IMDB rate more than 7","IMDB rate less than 7"))
+
+table = table(DataSet$greater_than_7,DataSet$pred)
+pre.accu = (table[1,1]+table[2,2])/sum(table)
+```
+
+-After adjustment and re-modelling, we found that most of the variables were significant, but some variables in genre were still non-significant. Predicting the results of the model allows us to calculate the probability of an imdb score greater than 7. 
+
+Assuming a probability greater than 0.5, the predicted outcome is classified as a rating greater than 7 and vice versa. This gives a prediction accuracy of `r round(pre.accu*100)`%, which is relatively close to 1. We therefore consider that this model performs well in terms of explanatory power and level of prediction.
+
+
+```{r oddsPlot,echo=FALSE,eval = TRUE, fig.align = "center",warning = FALSE,  out.width = '80%',fig.cap = "\\label{fig:Odds} Odds of IMDB rate greater than 7"}
+plot_model(model, show.values = TRUE, show.p = FALSE)
+```
+\
+
+
+**figure\ref{fig:Odds}** below shows the odds ratios of each variables.
+
+A red number indicates that the variable it corresponds to has a negative impact on the movie rating, and conversely, the variable corresponding to a blue number has a positive impact on the movie.
+
+The value of odds can be interpreted as follows. 
+
+For two films which differ by one unit in length, the Longer film is 0.97 times more likely to be rated more than 7 than shorter film.
+
+For two films which differ by one unit in budget, the film on lager budget is 1.79 times more likely to be rated more than 7 than the film on less budget.
+
+-According to this model we are able to know that the factors that influence whether a film rating is greater than 7 are: length, budget, votes, and genre.
+
+***
