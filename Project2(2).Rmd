@@ -1,6 +1,6 @@
 ---
 title: "Group Project 2"
-author: "Linxuan Guo, PiuSheung TANG, Yiqing Wen, Chenghao YANG, Yanqi Zhu"
+author: "Group 10： Linxuan Guo, PiuSheung TANG, Yiqing Wen, Chenghao YANG, Yanqi Zhu"
 output:
   pdf_document:
     latex_engine: pdflatex
