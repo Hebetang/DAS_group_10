@@ -38,7 +38,7 @@ film = read.csv("dataset10.csv")%>%
 film$greater_than_7 <- ifelse(film$rating > 7, "yes", "no")
 #Select dataset to omit the invalid column(eg.film_id and rating)
 film.select = film %>%
-  select(year, length, budget, votes, genre, greater_than_7)
+  dplyr::select(year, length, budget, votes, genre, greater_than_7)
 #Rename the dataset and transform the chr type value into factor
 DataSet = film.select%>%
   mutate_if(is.character, as.factor)
