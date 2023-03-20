@@ -51,7 +51,7 @@ kable(head(rawdata, n = 5), caption = '\\label{tab:IMDB} The first 5 rows of the
 
 As there are some NA values in this dataset that will influence our result, we first omit those NA values. Then, we use the column rating to create a binary factor. And we omit the invalid column film_id and rating. 
 
-According to the dataset, we need to transform the characters type values into factor type values. Finally, we set the level of the response variable to make the graph of the data visualization more understandable.
+According to the dataset, we need to transform the character type values into factor type values. Finally, we set the level of the response variable to make the graph of the data visualization more understandable.
 
 ```{r data, echo=FALSE, eval=TRUE, warning=FALSE, message=FALSE}
 ##Read and merge the dataset
@@ -70,7 +70,7 @@ DataSet = film.select%>%
 levels(DataSet$greater_than_7) <- c("IMDB rate less than 7", "IMDB rate greater than 7")
 ```
 \
-**Table \ref{tab:film}** below displays the first five rows of the data after processed. The last column "greater_than_7" was added to each row to present whether the rating of the film is greater than 7.
+**Table \ref{tab:film}** below displays the first five rows of the data after processing. The last column "greater_than_7" was added to each row to present whether the rating of the film is greater than 7.
 ```{r, eval = TRUE}
 kable(head(DataSet, n = 5), caption = '\\label{tab:film} The first 5 rows of the processed data',
       booktabs = TRUE)%>%
@@ -129,16 +129,16 @@ grid.arrange(p1,p2,p3,p4,
              top = "The Boxplot of IMDB rating greater than 7 versus each variable",
              ncol = 2,nrow=2)
 ```
-• **Figure(a)**: There are **zero** potential outliers. The year has little effect on the films rating, the left and right bars' distributions look like the same, and the median of the year distribution of the different rated films is basically in the same level range.
+• **Figure(a)**: There are **zero** potential outliers. The year has little effect on the films' rating, the left and right bars' distributions look the same, and the median of the year distribution of the different rated films is basically in the same level range.
 
-• **Figure(b)**：There are **many potential outliers**. As we can see from the graph, the length of films with high ratings are more densely distributed, while the length of films with poor ratings are spread out.
+• **Figure(b)**：There are **many potential outliers**. As we can see from the graph, the length of films with high ratings is more densely distributed, while the length of films with poor ratings is spread out.
 
 • **Figure(c)**: There are **eight** potential outlier. In terms of budget, the popular films have slightly higher budgets, but the difference is not too big.
 
-• **Figure(d)**: There are **all potential outliers**. The distributions appear to be similar, but the distribution on the left clearly has more extreme values and requires further discussion.
+• **Figure(d)**: There are **all potential outliers**. The distributions appear to be similar, but the distribution on the left has more extreme values and requires further discussion.
 \
 
-The histogram(**Figure \ref{fig:his}**) shows how many IMDB rates are less than 7 and more than 7 in different movie genre, respectively.
+The histogram(**Figure \ref{fig:his}**) shows how many IMDB rates are less than 7 and more than 7 in different movie genres, respectively.
 
 ```{r visual3, echo=TRUE, eval=TRUE, warning=FALSE, message=FALSE, out.width='90%',fig.align='center',fig.cap="\\label{fig:his}The Histograms of the proportion of movie categories and IMDB rate greater than 7 or not.",fig.pos='H'}
 #Plot of genre against greater_than_7
@@ -148,7 +148,7 @@ ggplot(data = DataSet, aes(x= greater_than_7,  y = ..prop.., group=genre, fill=g
        title = "Barplot of the proportion of whether IMDB rate greater than 7 by genre")
 ```
 
-We can see that the ratings of different genres of films vary widely, especially Action, Short films, Comedy, Drama and Romance. short films and comedies are more likely to be loved by audiences in film ratings, while Action, Drama and Romance are less likely to receive high ratings. This is a rough indication that the genre of film does have an impact on the film scores.
+We can see that the ratings of different genres of films vary widely, especially Action, Short films, Comedy, Drama, and Romance. short films and comedies are more likely to be loved by audiences in film ratings, while Action, Drama, and Romance are less likely to receive high ratings. This is a rough indication that the genre of film does have an impact on the film scores.
 
 # Modeling {#sec:Model}
 ## Initial modelling {#sec:init}
@@ -178,7 +178,7 @@ where $\mathbf {p}$ is the probability of IMDB rate greater than 7, and $\mathbf
 \
 From the results it is clear that:
 
-•  The point estimate of odds for variable Year is estimated to be positive, which means that, all else being equal, films released later are more likely to receive a higher rating. Considered its high p-value in parametric test, YEAR has a high probability of being a non-significant variable. 
+•  The point estimate of odds for variable Year is estimated to be positive, which means that, all else being equal, films released later are more likely to receive a higher rating. Considering its high p-value in the parametric test, YEAR has a high probability of being a non-significant variable. 
 
 •  The point estimate of odds for length is negative, suggesting that, all else being equal, the longer the film the more likely it is to receive a poor rating.
 
@@ -193,7 +193,7 @@ From the results it is clear that:
 
 ## Model optimisation {#sec:Optim}
 
-Based on the initial modelling results, the YEAR variable looks more likely to be a non-significant variable, so this variable will be removed and the model will be reconstructed using the remaining variables, resulting in the following.
+Based on the initial modeling results, the YEAR variable looks more likely to be a non-significant variable, so this variable will be removed and the model will be reconstructed using the remaining variables, resulting in the following.
 
 ```{r ModlOptim, echo=TRUE, eval=TRUE, warning=FALSE}
 model1 = glm(greater_than_7 ~ length + budget + votes + genre, data = DataSet, 
@@ -227,7 +227,7 @@ table = table(DataSet$greater_than_7,DataSet$pred)
 pre.accu = (table[1,1]+table[2,2])/sum(table)
 ```
 
-After adjustment and re-modelling, we found that most of the variables were significant, but some variables in genre were still non-significant. Predicting the results of the model allows us to calculate the probability of an IMDB score greater than 7. 
+After adjustment and re-modeling, we found that most of the variables were significant, but some variables in the genre were still non-significant. Predicting the results of the model allows us to calculate the probability of an IMDB score greater than 7. 
 
 Assuming a probability greater than 0.5, the predicted outcome is classified as a rating greater than 7 and vice versa. This gives a prediction accuracy of `r round(pre.accu*100)`%, which is relatively close to 1. Therefore, we consider that this model performs well in terms of explanatory power and level of prediction.
 
@@ -251,13 +251,13 @@ According to all the analysis presented above and the model, we are able to know
 ```{r, echo = FALSE, fig.align = "center", warning = FALSE, out.width = '80%', fig.cap = "\\label{fig:prob} predicted probabilities of greater than 7"}
 plot_model(model1,  type = "pred")
 ```
-**Figure 5** above shows that shorter film are more likely to be predicted as a highly rated film, this may be due to some correlation between LENGTH and SHORT in the film genres, as we can see by doing visualizations before, most of the short films received positive reviews.
+**Figure 5** above shows that shorter films are more likely to be predicted as a highly rated film, this may be due to some correlation between LENGTH and SHORT in the film genres, as we can see by doing visualizations before, most of the short films received positive reviews.
 
 **Figure 6**: As with the results of the previous exploratory data analysis, the higher the budget, the more likely it is that the film will be well received in the future.
 
 **Figure 7**: The votes, while also contributing to the film's rating, is less effective in terms of predicting results, due to the graph that the more votes there are, the wider the predicted range.
 
-**Figure 8** above shows that Documentary is predicted to have a high probability to be rated greater than 7. Comedy and short films are predicted to have a moderate probability  to be rated above 7. The probability of other films receiving a rating above 7 is low.
+**Figure 8** above shows that Documentaries are predicted to have a high probability to be rated greater than 7. Comedy and short films are predicted to have a moderate probability to be rated above 7. The probability of other films receiving a rating above 7 is low.
 
 
 
